@@ -14,33 +14,40 @@ from pyasn1.codec.der import decoder, encoder
 from pyasn1_modules import rfc5280, pem
 import sys
 
-if len(sys.argv) != 1:
-    print("""Usage:
-$ cat CACertificate.pem | %s
-$ cat userCertificate.pem | %s""" % (sys.argv[0], sys.argv[0]))
+if sys.argv and sys.argv[0] in ('-h', '--help'):
+    print("Usage: %s [file.pem] ..." % sys.argv[0])
     sys.exit(-1)
 
 certType = rfc5280.Certificate()
 
 certCnt = 0
 
-while 1:
-    idx, substrate = pem.readPemBlocksFromFile(
-        sys.stdin, ('-----BEGIN CERTIFICATE-----',
-                    '-----END CERTIFICATE-----')
-    )
-    if not substrate:
-        break
+for f in sys.argv:
+    if f == '-':
+        f = sys.stdin
+    else:
+        f = open(f)
 
-    cert, rest = decoder.decode(substrate, asn1Spec=certType)
+    while True:
+        idx, substrate = pem.readPemBlocksFromFile(
+            f, ('-----BEGIN CERTIFICATE-----',
+                '-----END CERTIFICATE-----')
+        )
+        if not substrate:
+            break
 
-    if rest:
-        substrate = substrate[:-len(rest)]
+        cert, rest = decoder.decode(substrate, asn1Spec=certType)
 
-    print(cert.prettyPrint())
+        if rest:
+            substrate = substrate[:-len(rest)]
 
-    assert encoder.encode(cert) == substrate, 'cert recode fails'
+        print(cert.prettyPrint())
 
-    certCnt += 1
+#        assert encoder.encode(cert) == substrate, 'cert recode fails'
+
+        certCnt += 1
+
+        if certCnt > 5:
+            break
 
 print('*** %s PEM cert(s) de/serialized' % certCnt)
