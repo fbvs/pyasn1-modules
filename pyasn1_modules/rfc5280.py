@@ -341,21 +341,21 @@ class TBSCertList(univ.Sequence):
     pass
 
 
+class RevokedCertificate(univ.Sequence):
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType('userCertificate', CertificateSerialNumber()),
+        namedtype.NamedType('revocationDate', Time()),
+        namedtype.OptionalNamedType('crlEntryExtensions', Extensions())
+)
+
 TBSCertList.componentType = namedtype.NamedTypes(
     namedtype.OptionalNamedType('version', Version()),
     namedtype.NamedType('signature', AlgorithmIdentifier()),
     namedtype.NamedType('issuer', Name()),
     namedtype.NamedType('thisUpdate', Time()),
     namedtype.OptionalNamedType('nextUpdate', Time()),
-    namedtype.OptionalNamedType('revokedCertificates',
-                                univ.SequenceOf(componentType=univ.Sequence(componentType=namedtype.NamedTypes(
-                                    namedtype.NamedType('userCertificate', CertificateSerialNumber()),
-                                    namedtype.NamedType('revocationDate', Time()),
-                                    namedtype.OptionalNamedType('crlEntryExtensions', Extensions())
-                                ))
-                                )),
-    namedtype.OptionalNamedType('crlExtensions',
-                                Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
+    namedtype.OptionalNamedType('revokedCertificates', univ.SequenceOf(componentType=RevokedCertificate())),
+    namedtype.OptionalNamedType('crlExtensions', Extensions().subtype(explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0)))
 )
 
 
@@ -581,16 +581,23 @@ class ExtendedNetworkAddress(univ.Choice):
     pass
 
 
-ExtendedNetworkAddress.componentType = namedtype.NamedTypes(
-    namedtype.NamedType('e163-4-address', univ.Sequence(componentType=namedtype.NamedTypes(
+class E163_4_Address(univ.Sequence):
+    pass
+
+
+E163_4_Address.componentType = namedtype.NamedTypes(
         namedtype.NamedType('number', char.NumericString().subtype(
             subtypeSpec=constraint.ValueSizeConstraint(1, ub_e163_4_number_length)).subtype(
             implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))),
         namedtype.OptionalNamedType('sub-address', char.NumericString().subtype(
             subtypeSpec=constraint.ValueSizeConstraint(1, ub_e163_4_sub_address_length)).subtype(
-            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1)))
-    ))
-                        ),
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 1))),
+        namedtype.NamedType('psap-address', PresentationAddress().subtype(
+            implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)))
+)
+
+ExtendedNetworkAddress.componentType = namedtype.NamedTypes(
+    namedtype.NamedType('e163-4-address', E163_4_Address()),
     namedtype.NamedType('psap-address', PresentationAddress().subtype(
         implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0)))
 )
